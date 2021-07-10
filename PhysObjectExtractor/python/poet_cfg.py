@@ -188,12 +188,6 @@ process.mypvertex = cms.EDAnalyzer('VertexAnalyzer')
 process.mytracks= cms.EDAnalyzer('TrackAnalyzer')
 
 process.mygenparticle= cms.EDAnalyzer('GenParticleAnalyzer',
-<<<<<<< HEAD
-			#collect particles with specific pdgid:status
-			#if 0:0, collect them all	
-			input_particle = cms.vstring("1:11","1:13","1:22","2:15")
-			)
-=======
 				      #collect particles with specific pdgid:status
 				      #if 0:0, collect them all	
 				      input_particle = cms.vstring("1:11","1:13","1:22","2:15")
@@ -206,7 +200,8 @@ process.mytriggers = cms.EDAnalyzer('TriggerAnalyzer',
                               triggerEvent   = cms.InputTag("hltTriggerSummaryAOD","","HLT")                             
                               )
 
->>>>>>> upstream/master
+process.mymatching=cms.EDAnalyzer('MatchingAnalyzer')
+
 
 # Configure the output ROOT filename
 process.TFileService = cms.Service(
@@ -214,7 +209,7 @@ process.TFileService = cms.Service(
 
 #### Finally run everything! Separation by * implies that processing order is important, separation by + implies that any order will work
 if doPat:
-	process.p = cms.Path(process.patDefaultSequence+process.myevents+process.myelectrons+process.mymuons+process.myphotons+process.myjets+process.mymets+process.mytaus+process.mytrigEvent+process.mypvertex+process.mytracks+process.mygenparticle+process.mytriggers)
+	process.p = cms.Path(process.patDefaultSequence+process.myevents+process.myelectrons+process.mymuons+process.myphotons+process.myjets+process.mymets+process.mytaus+process.mytrigEvent+process.mypvertex+process.mytracks+process.mygenparticle+process.mytriggers+process.mymatching)
 else: 
-	if isData: process.p = cms.Path(process.myevents+process.myelectrons+process.mymuons+process.myphotons+process.myjets+process.mymets+process.mytaus+process.mytrigEvent+process.mypvertex+process.mytracks+process.mygenparticle+process.mytriggers)
-	else: process.p = cms.Path(process.selectedHadronsAndPartons * process.jetFlavourInfosAK5PFJets * process.myevents+process.myelectrons+process.mymuons+process.myphotons+process.myjets+process.mymets+process.mytaus+process.mytrigEvent+process.mypvertex+process.mytracks+process.mygenparticle+process.mytriggers)
+	if isData: process.p = cms.Path(process.myevents+process.myelectrons+process.mymuons+process.myphotons+process.myjets+process.mymets+process.mytaus+process.mytrigEvent+process.mypvertex+process.mytracks+process.mygenparticle+process.mytriggers+process.mymatching)
+	else: process.p = cms.Path(process.selectedHadronsAndPartons * process.jetFlavourInfosAK5PFJets * process.myevents+process.myelectrons+process.mymuons+process.myphotons+process.myjets+process.mymets+process.mytaus+process.mytrigEvent+process.mypvertex+process.mytracks+process.mygenparticle+process.mytriggers+process.mymatching)
