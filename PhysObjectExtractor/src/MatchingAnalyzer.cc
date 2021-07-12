@@ -97,10 +97,6 @@ class MatchingAnalyzer : public edm::EDAnalyzer {
       virtual void beginLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&);
       virtual void endLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&) override;
 
-
-      //declare the input tag for MuonCollection
-      edm::InputTag muonInput;
-
       // ----------member data ---------------------------
 
       TTree *mtree;
@@ -178,8 +174,8 @@ MatchingAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
    Handle<GenParticleCollection> gens;
    iEvent.getByLabel(InputTag("genParticles"), gens);
 
-   //Handle<PhotonCollection> photons;
-   //iEvent.getByLabel(InputTag("photons"), photons);
+   Handle<PhotonCollection> photons;
+   iEvent.getByLabel(InputTag("photons"), photons);
 
    GenPart_pt.clear();
    GenPart_eta.clear();
@@ -203,12 +199,12 @@ MatchingAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
       { 
         interestingGenParticles.emplace_back(*it);
       }
-      /*
+      
       if (status == 1 && pdgId == 22) // photon
       { 
         interestingGenParticles.emplace_back(*it);
       }
-      */
+      
       if (status == 2 && pdgId == 15) // tau
       { 
         interestingGenParticles.emplace_back(*it);
@@ -262,14 +258,13 @@ MatchingAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
       }
    
   }
-/*
+
   //match generator particles with photons
   for (auto p = photons->begin(); p != photons->end(); p++) {
       auto p4 = p->p4();
       auto idx = findBestVisibleMatch(interestingGenParticles, p4);
       if (idx != -1) {
         auto g = interestingGenParticles.begin() + idx;
-        cout<<idx<<endl;
         GenPart_pt.push_back(g->pt());
         GenPart_eta.push_back(g->eta());
         GenPart_mass.push_back(g->mass());
@@ -279,7 +274,7 @@ MatchingAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
       }
    
   }
-*/	
+	
   mtree->Fill();
   return;
 
