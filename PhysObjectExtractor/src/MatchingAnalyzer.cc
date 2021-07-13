@@ -100,13 +100,19 @@ class MatchingAnalyzer : public edm::EDAnalyzer {
       // ----------member data ---------------------------
 
       TTree *mtree;
+
       std::vector<int> GenPart_status;
       std::vector<float> GenPart_pt;
       std::vector<float> GenPart_eta;
       std::vector<float> GenPart_mass;
       std::vector<int> GenPart_pdgId;
-      std::vector<float> GenPart_phi; 
-    
+      std::vector<float> GenPart_phi;
+
+      int value_el_genpartidx[10000];
+      int value_mu_genpartidx[10000];
+      int value_tau_genpartidx[10000];
+      int value_ph_genpartidx[10000];
+      
 };
 
 //
@@ -129,7 +135,7 @@ MatchingAnalyzer::MatchingAnalyzer(const edm::ParameterSet& iConfig)
 	edm::Service<TFileService> fs;
 	mtree = fs->make<TTree>("Events", "Events");
 
-	mtree->Branch("GenPart_pt",&GenPart_pt);
+	  mtree->Branch("GenPart_pt",&GenPart_pt);
     mtree->GetBranch("GenPart_pt")->SetTitle("generator particle transverse momentum");
     mtree->Branch("GenPart_eta",&GenPart_eta);
     mtree->GetBranch("GenPart_eta")->SetTitle("generator particle pseudorapidity");
@@ -141,6 +147,14 @@ MatchingAnalyzer::MatchingAnalyzer(const edm::ParameterSet& iConfig)
     mtree->GetBranch("GenPart_pdgId")->SetTitle("generator particle PDG id");
     mtree->Branch("GenPart_status",&GenPart_status);
     mtree->GetBranch("GenPart_status")->SetTitle("Particle status. 1=stable");
+    mtree->Branch("Muon_genPartIdx", value_mu_genpartidx);
+    mtree->GetBranch("Muon_genPartIdx")->SetTitle("Index of generator particle matched with muon");
+    mtree->Branch("Electron_genPartIdx", value_el_genpartidx);
+    mtree->GetBranch("Electron_genPartIdx")->SetTitle("Index of generator particle matched with electron");
+    mtree->Branch("Tau_genPartIdx", value_tau_genpartidx);
+    mtree->GetBranch("Tau_genPartIdx")->SetTitle("Index of generator particle matched with tau");
+    mtree->Branch("Photon_genPartIdx", value_ph_genpartidx);
+    mtree->GetBranch("Photon_genPartIdx")->SetTitle("Index of generator particle matched with photon");
 }
 
 MatchingAnalyzer::~MatchingAnalyzer()
@@ -185,6 +199,10 @@ MatchingAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
    GenPart_status.clear();
    
    std::vector<GenParticle> interestingGenParticles;
+   std::vector<Muon> selectedMuons;
+   std::vector<GsfElectron> selectedElectrons;
+   std::vector<PFTau> selectedTaus;
+   std::vector<Photon> selectedPhotons;
 
    //find interesting gen particles (electrons, muons, taus, photons)
     
@@ -211,8 +229,38 @@ MatchingAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
       }
     }
 
+    //find electrons, taus, muons and photons that match the minimum pT criteria
+
+    const float mu_min_pt = 3;
+    const float el_min_pt = 5;
+    const float tau_min_pt = 15;
+    const float ph_min_pt = 5;
+
+    for (auto it = electrons->begin(); it != electrons->end(); it++)
+    {
+      if(it->pt() > el_min_pt) 
+      selectedElectrons.emplace_back(*it);
+    }
+    for (auto it = muons->begin(); it != muons->end(); it++)
+    {
+      if(it->pt() > mu_min_pt) 
+      selectedMuons.emplace_back(*it);
+    }
+    for (auto it = taus->begin(); it != taus->end(); it++)
+    {
+      if(it->pt() > tau_min_pt) 
+      selectedTaus.emplace_back(*it);
+    }
+    for (auto it = photons->begin(); it != photons->end(); it++)
+    {
+      if(it->pt() > ph_min_pt) 
+      selectedPhotons.emplace_back(*it);
+    }
+    
+   int value_gen_n = 0;
+
    //match generator particles with electrons
-   for (auto p = electrons->begin(); p != electrons->end(); p++) {
+   for (auto p = selectedElectrons.begin(); p != selectedElectrons.end(); p++) {
       auto p4 = p->p4();
       auto idx = findBestVisibleMatch(interestingGenParticles, p4);
       if (idx != -1) {
@@ -223,12 +271,14 @@ MatchingAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
         GenPart_pdgId.push_back(g->pdgId());
         GenPart_phi.push_back(g->phi());
         GenPart_status.push_back(g->status());
+        value_el_genpartidx[p - selectedElectrons.begin()] = value_gen_n;
+        value_gen_n++;
       }
    
   }
 
    //match generator particles with muons
-   for (auto p = muons->begin(); p != muons->end(); p++) {
+   for (auto p = selectedMuons.begin(); p != selectedMuons.end(); p++) {
       auto p4 = p->p4();
       auto idx = findBestVisibleMatch(interestingGenParticles, p4);
       if (idx != -1) {
@@ -239,12 +289,14 @@ MatchingAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
         GenPart_pdgId.push_back(g->pdgId());
         GenPart_phi.push_back(g->phi());
         GenPart_status.push_back(g->status());
+        value_mu_genpartidx[p - selectedMuons.begin()] = value_gen_n;
+        value_gen_n++;
       }
    
   }
   
    //match generator particles with taus
-  for (auto p = taus->begin(); p != taus->end(); p++) {
+  for (auto p = selectedTaus.begin(); p != selectedTaus.end(); p++) {
       auto p4 = p->p4();
       auto idx = findBestVisibleMatch(interestingGenParticles, p4);
       if (idx != -1) {
@@ -255,12 +307,14 @@ MatchingAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
         GenPart_pdgId.push_back(g->pdgId());
         GenPart_phi.push_back(g->phi());
         GenPart_status.push_back(g->status());
+        value_tau_genpartidx[p - selectedTaus.begin()] = value_gen_n;
+        value_gen_n++;
       }
    
   }
 
   //match generator particles with photons
-  for (auto p = photons->begin(); p != photons->end(); p++) {
+  for (auto p = selectedPhotons.begin(); p != selectedPhotons.end(); p++) {
       auto p4 = p->p4();
       auto idx = findBestVisibleMatch(interestingGenParticles, p4);
       if (idx != -1) {
@@ -271,6 +325,8 @@ MatchingAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
         GenPart_pdgId.push_back(g->pdgId());
         GenPart_phi.push_back(g->phi());
         GenPart_status.push_back(g->status());
+        value_ph_genpartidx[p - selectedPhotons.begin()] = value_gen_n;
+        value_gen_n++;
       }
    
   }
