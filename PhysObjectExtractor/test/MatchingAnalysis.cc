@@ -11,13 +11,13 @@
 #include <TStyle.h>
 #include <chrono>
 #include "math.h"
-
+#include "DataFormats/Math/interface/deltaR.h"
 
 //Compile with:
-//g++ -o test MatchingAnalysis.cc $(root-config --cflags --libs)
+//g++ -o test POET_test.cxx $(root-config --cflags --libs)
 
 
-void BestMatch(float object_eta, float object_phi){
+void BestMatch(float object_eta, float object_phi, int object_pdgId){
 
   using namespace std;
    
@@ -55,9 +55,8 @@ void BestMatch(float object_eta, float object_phi){
   tevent->GetEntry(i);
   for (Int_t j=0; j<numGenPart;++j)
     {
-       r=sqrt(pow(GenPart_eta->at(j)-object_eta,2)+pow(GenPart_phi->at(j)-object_phi,2));
-       //cout<<r<<endl;
-       if (r < minDeltaR) {
+       r=deltaR(GenPart_eta->at(j),GenPart_phi->at(j),object_eta,object_phi);
+       if (r < minDeltaR && abs(GenPart_pdgId->at(j))==object_pdgId) {
       minDeltaR = r;
       i_matched=i;
       j_matched=j;
@@ -84,19 +83,19 @@ int main (){
   
   std::vector<float>* electron_eta=0;
   std::vector<float>* electron_phi=0;
-  Long64_t numelectron=0;
+  Int_t numelectron=0;
   
   std::vector<float>* muon_eta=0;
   std::vector<float>* muon_phi=0;
-  Long64_t nummuon=0;
+  Int_t nummuon=0;
   
   std::vector<float>* tau_eta=0;
   std::vector<float>* tau_phi=0;
-  Long64_t numtau=0;
+  Int_t numtau=0;
 
   std::vector<float>* photon_eta=0;
   std::vector<float>* photon_phi=0;
-  Long64_t numphoton=0;
+  Int_t numphoton=0;
 
   TFile* infile = new TFile("myoutput.root", "READ");
   TTree* tevent = (TTree*)infile->Get("myevents/Events");
@@ -129,7 +128,7 @@ int main (){
     tevent->GetEntry(i);
     for (Int_t j=0; j<numelectron;++j)
     {
-      BestMatch(electron_eta->at(j),electron_phi->at(j));
+      BestMatch(electron_eta->at(j),electron_phi->at(j),11);
     }  
   }
 
@@ -141,10 +140,10 @@ int main (){
     tevent->GetEntry(i);
     for (Int_t j=0; j<nummuon;++j)
     {
-      BestMatch(muon_eta->at(j),muon_phi->at(j));
+      BestMatch(muon_eta->at(j),muon_phi->at(j),13);
     }    
   }
-
+  
   tevent->AddFriend(ttaus);
   nentries = tevent->GetEntries();
   cout<<"Matching taus..."<<endl; 
@@ -153,7 +152,7 @@ int main (){
     tevent->GetEntry(i);
     for (Int_t j=0; j<numtau;++j)
     {
-      BestMatch(tau_eta->at(j),tau_phi->at(j));
+      BestMatch(tau_eta->at(j),tau_phi->at(j),15);
     }  
   }
 
@@ -165,7 +164,7 @@ int main (){
     tevent->GetEntry(i);
     for (Int_t j=0; j<numphoton;++j)
     {
-      BestMatch(photon_eta->at(j),photon_phi->at(j));
+      BestMatch(photon_eta->at(j),photon_phi->at(j),22);
     }  
   }
 }
