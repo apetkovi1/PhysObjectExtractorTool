@@ -1,23 +1,16 @@
-#include "ROOT/RDataFrame.hxx"
-#include "ROOT/RVec.hxx"
 #include "TFile.h"
 #include "TTree.h"
-#include "TLatex.h"
-#include "TH1D.h"
 #include <iostream>
 #include <vector>
 #include <TChain.h>
-#include <TCanvas.h>
-#include <TStyle.h>
-#include <chrono>
 #include "math.h"
 #include "DataFormats/Math/interface/deltaR.h"
 
 //Compile with:
-//g++ -o test POET_test.cxx $(root-config --cflags --libs)
+//g++ -o test MatchingAnalysis.cc $(root-config --cflags --libs)
 
 
-void BestMatch(float object_eta, float object_phi, int object_pdgId){
+void BestMatch(float object_eta, float object_phi, int object_pdgId,Long64_t event){
 
   using namespace std;
    
@@ -29,7 +22,6 @@ void BestMatch(float object_eta, float object_phi, int object_pdgId){
   float minDeltaR = 999.0;
   float r;
   Int_t numGenPart=0;
-  Long64_t i_matched;
   Int_t j_matched;
   vector<float>*  GenPart_eta=0;
   vector<float>*  GenPart_phi=0;
@@ -48,24 +40,18 @@ void BestMatch(float object_eta, float object_phi, int object_pdgId){
    
   tevent->AddFriend(tgenparticles);
    
-  Long64_t nentries = tevent->GetEntries();
-
-  for (Long64_t i=0;i<nentries;i++) 
-  {
-  tevent->GetEntry(i);
+  tevent->GetEntry(event);
   for (Int_t j=0; j<numGenPart;++j)
     {
        r=deltaR(GenPart_eta->at(j),GenPart_phi->at(j),object_eta,object_phi);
-       if (r < minDeltaR && abs(GenPart_pdgId->at(j))==object_pdgId) {
-      minDeltaR = r;
-      i_matched=i;
-      j_matched=j;
-    }
+       if (r < minDeltaR && abs(GenPart_pdgId->at(j))==object_pdgId) 
+       {
+        minDeltaR = r;
+        j_matched=j;
+       }
     }    
-  }
   
-  tevent->GetEntry(i_matched);
-  cout<<endl<<"Matched particle is from event"<<" "<<i_matched<<" "<<"of index"<<" "<<j_matched<<" "<<"with following properties:"<<endl;
+  cout<<"Matched generator particle has index "<<j_matched+1<<" and the following properties:"<<endl;
   cout<<"pdg ID="<<GenPart_pdgId->at(j_matched)<<endl;
   cout<<"mass="<<GenPart_mass->at(j_matched)<<" "<<"Gev"<<endl;
   cout<<"pt="<<GenPart_pt->at(j_matched)<<" "<<"Gev"<<endl;
@@ -121,50 +107,50 @@ int main (){
   tphotons->SetBranchAddress("numberphoton",&numphoton);
 
   tevent->AddFriend(telectrons);
-  Long64_t nentries = tevent->GetEntries();
-  cout<<"Matching electrons..."<<endl; 
+  Long64_t nentries = tevent->GetEntries(); 
   for (Long64_t i=0;i<nentries;i++) 
   {  
     tevent->GetEntry(i);
     for (Int_t j=0; j<numelectron;++j)
     {
-      BestMatch(electron_eta->at(j),electron_phi->at(j),11);
+      cout<<"Finding best match for "<<j+1<<". electron"<<" in "<<i+1<<". event"<<endl;
+      BestMatch(electron_eta->at(j),electron_phi->at(j),11,i);
     }  
   }
 
   tevent->AddFriend(tmuons);
   nentries = tevent->GetEntries();
-  cout<<"Matching muons..."<<endl; 
   for (Long64_t i=0;i<nentries;i++) 
   {  
     tevent->GetEntry(i);
     for (Int_t j=0; j<nummuon;++j)
     {
-      BestMatch(muon_eta->at(j),muon_phi->at(j),13);
+      cout<<"Finding best match for "<<j+1<<". muon"<<" in "<<i+1<<". event"<<endl;
+      BestMatch(muon_eta->at(j),muon_phi->at(j),13,i);
     }    
   }
   
   tevent->AddFriend(ttaus);
-  nentries = tevent->GetEntries();
-  cout<<"Matching taus..."<<endl; 
+  nentries = tevent->GetEntries(); 
   for (Long64_t i=0;i<nentries;i++) 
   {  
     tevent->GetEntry(i);
     for (Int_t j=0; j<numtau;++j)
     {
-      BestMatch(tau_eta->at(j),tau_phi->at(j),15);
+      cout<<"Finding best match for "<<j+1<<". tau"<<" in "<<i+1<<". event"<<endl;
+      BestMatch(tau_eta->at(j),tau_phi->at(j),15,i);
     }  
   }
 
   tevent->AddFriend(tphotons);
-  nentries = tevent->GetEntries();
-  cout<<"Matching photons..."<<endl; 
+  nentries = tevent->GetEntries(); 
   for (Long64_t i=0;i<nentries;i++) 
   {  
     tevent->GetEntry(i);
     for (Int_t j=0; j<numphoton;++j)
     {
-      BestMatch(photon_eta->at(j),photon_phi->at(j),22);
+      cout<<"Finding best match for "<<j+1<<". photon"<<" in "<<i+1<<". event"<<endl;
+      BestMatch(photon_eta->at(j),photon_phi->at(j),22,i);
     }  
   }
 }
